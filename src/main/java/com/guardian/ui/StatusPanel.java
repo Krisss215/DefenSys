@@ -1,49 +1,75 @@
-// StatusPanel.java
 package com.guardian.ui;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class StatusPanel extends JPanel {
+public class StatusPanel extends GlassPanel {
 
-    private final GlassCard cardNet =
-            new GlassCard("Network", "Offline", "No active connections", AppTheme.WARN());
-    private final GlassCard cardUsb =
-            new GlassCard("USB", "0 events", "No suspicious devices", AppTheme.OK());
+    private final JLabel statusLabel;
+    private final JLabel usbLabel;
+    private final JLabel netLabel;
+    private final JLabel title;
 
     public StatusPanel() {
-        setOpaque(false);
-        setLayout(new GridLayout(2, 1, 12, 12));
+        super(new BorderLayout(12, 6));
 
-        add(cardNet);
-        add(cardUsb);
+        GlassCard card = new GlassCard(true);
+        add(card, BorderLayout.CENTER);
+
+        JPanel content = new JPanel();
+        content.setOpaque(false);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+
+        title = new JLabel("USB Ninja – Agent status");
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 16f));
+        title.setForeground(AppTheme.getTitleColor());
+
+        statusLabel = new JLabel("Agent stopped");
+        statusLabel.setForeground(AppTheme.getSubtitleColor());
+
+        usbLabel = new JLabel("USB: no events");
+        usbLabel.setForeground(AppTheme.getSubtitleColor());
+
+        netLabel = new JLabel("Network: no events");
+        netLabel.setForeground(AppTheme.getSubtitleColor());
+
+        content.add(title);
+        content.add(Box.createVerticalStrut(6));
+        content.add(statusLabel);
+        content.add(Box.createVerticalStrut(4));
+        content.add(usbLabel);
+        content.add(Box.createVerticalStrut(2));
+        content.add(netLabel);
+
+        card.add(card.createAccentColumn(), BorderLayout.WEST);
+        card.add(content, BorderLayout.CENTER);
+    }
+
+    public void setRunning(boolean running) {
+        statusLabel.setText(running ? "Agent running" : "Agent stopped");
+    }
+
+    public void setUsbStatus(String text) {
+        usbLabel.setText("USB: " + text);
+    }
+
+    public void setNetStatus(String text) {
+        netLabel.setText("Network: " + text);
     }
 
     public void setNetworkOnline(boolean online, int activeConnections) {
-        if (online) {
-            cardNet.setAccentColor(AppTheme.OK());
-            cardNet.setAlertMode(false);
-            cardNet.setValue(activeConnections + " connections");
-            cardNet.setSubtitle("Firewall active, monitoring enabled");
-        } else {
-            cardNet.setAccentColor(AppTheme.WARN());
-            cardNet.setAlertMode(true);
-            cardNet.setValue("Offline");
-            cardNet.setSubtitle("No active connections detected");
-        }
+        String state = online ? "online" : "offline";
+        setNetStatus(state + " (" + activeConnections + " connections)");
     }
 
-    public void setUsbStats(int totalEvents, int suspiciousEvents) {
-        if (suspiciousEvents > 0) {
-            cardUsb.setAccentColor(AppTheme.ERROR());
-            cardUsb.setAlertMode(true);
-            cardUsb.setValue(totalEvents + " / " + suspiciousEvents);
-            cardUsb.setSubtitle("Suspicious USB activity detected");
-        } else {
-            cardUsb.setAccentColor(AppTheme.OK());
-            cardUsb.setAlertMode(false);
-            cardUsb.setValue(totalEvents + " devices");
-            cardUsb.setSubtitle("All devices verified");
-        }
+    public void setUsbStats(int detected, int blocked) {
+        setUsbStatus("devices: " + detected + ", blocked: " + blocked);
+    }
+
+    public void refreshColors() {
+        title.setForeground(AppTheme.getTitleColor());
+        statusLabel.setForeground(AppTheme.getSubtitleColor());
+        usbLabel.setForeground(AppTheme.getSubtitleColor());
+        netLabel.setForeground(AppTheme.getSubtitleColor());
     }
 }

@@ -1,54 +1,74 @@
-// HistoryPanel.java
 package com.guardian.ui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
-public class HistoryPanel extends JPanel implements PropertyChangeListener {
+public class HistoryPanel extends GlassPanel {
 
-    private final JPanel listPanel = new JPanel();
-    private final JLabel title;
+    private final JTextArea textArea;
+    private final JLabel titleLabel;
 
     public HistoryPanel() {
-        setOpaque(false);
-        setLayout(new BorderLayout(8, 8));
+        super(new BorderLayout());
 
-        title = new JLabel("History");
-        title.setFont(AppTheme.titleFont(16f));
-        title.setForeground(AppTheme.textPrimary());
+        GlassCard card = new GlassCard(true);
+        add(card, BorderLayout.CENTER);
 
-        add(title, BorderLayout.NORTH);
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
 
-        listPanel.setOpaque(false);
-        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        titleLabel = new JLabel("Event history");
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
+        titleLabel.setForeground(AppTheme.getTitleColor());
 
-        JScrollPane scroll = new JScrollPane(listPanel);
+        header.add(titleLabel, BorderLayout.WEST);
+
+        textArea = new JTextArea();
+        textArea.setEditable(false);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setOpaque(false);                                   // нет чёрного фона
+        textArea.setForeground(AppTheme.getHistoryTextColor());
+        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
+        textArea.setRows(8);                                         // фикс высоты, дальше скролл
+
+        JScrollPane scroll = new JScrollPane(textArea);
+        scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getVerticalScrollBar().setUI(new GlassScrollBarUI());
-        scroll.getHorizontalScrollBar().setUI(new GlassScrollBarUI());
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
 
-        add(scroll, BorderLayout.CENTER);
+        card.add(card.createAccentColumn(), BorderLayout.WEST);
 
-        AppTheme.addThemeListener(this);
+        JPanel inner = new JPanel(new BorderLayout(0, 10));
+        inner.setOpaque(false);
+        inner.add(header, BorderLayout.NORTH);
+        inner.add(scroll, BorderLayout.CENTER);
+
+        card.add(inner, BorderLayout.CENTER);
+    }
+
+    public void log(String msg) {
+        if (textArea.getText().isEmpty()) {
+            textArea.setText(msg);
+        } else {
+            textArea.append("\n" + msg);
+        }
+        textArea.setCaretPosition(textArea.getDocument().getLength());
     }
 
     public void addEvent(String time, String source, String message, boolean alert) {
-        GlassRow row = new GlassRow(time, source, message, alert);
-        listPanel.add(row);
-        listPanel.add(Box.createVerticalStrut(6));
-        revalidate();
-        repaint();
+        String level = alert ? "ALERT" : "INFO";
+        String line = String.format("%s [%s] (%s) %s", time, level, source, message);
+        log(line);
     }
 
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if ("mode".equals(evt.getPropertyName())) {
-            title.setForeground(AppTheme.textPrimary());
-            repaint();
-        }
+    public void refreshColors() {
+        titleLabel.setForeground(AppTheme.getTitleColor());
+        textArea.setForeground(AppTheme.getHistoryTextColor());
     }
 }
+
+

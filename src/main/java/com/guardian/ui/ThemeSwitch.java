@@ -1,100 +1,89 @@
-// ThemeSwitch.java
 package com.guardian.ui;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-/**
- * Переключатель темы в виде ползунка "солнце ↔ луна".
- */
-public class ThemeSwitch extends JToggleButton {
+public class ThemeSwitch extends JComponent {
+
+    // true = DARK (thumb on the right), false = LIGHT (thumb on the left)
+    private boolean dark = true;
+    private Runnable onToggle;
 
     public ThemeSwitch() {
-        setModel(new ToggleButtonModel());
-        setFocusPainted(false);
-        setBorderPainted(false);
-        setContentAreaFilled(false);
-        setOpaque(false);
+        setPreferredSize(new Dimension(64, 30));
+        setMinimumSize(new Dimension(64, 30));
+        setMaximumSize(new Dimension(64, 30));
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        setToolTipText("Toggle light / dark theme");
 
-        setSelected(AppTheme.getMode() == ThemeMode.DARK);
-
-        addActionListener(e -> {
-            ThemeMode newMode = isSelected() ? ThemeMode.DARK : ThemeMode.LIGHT;
-            AppTheme.setMode(newMode);
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                toggle();
+            }
         });
     }
 
-    @Override
-    public Dimension getPreferredSize() {
-        return new Dimension(56, 28);
+    public void setMode(ThemeMode mode) {
+        dark = (mode == ThemeMode.DARK);
+        repaint();
+    }
+
+    public ThemeMode getMode() {
+        return dark ? ThemeMode.DARK : ThemeMode.LIGHT;
+    }
+
+    public void setOnToggle(Runnable onToggle) {
+        this.onToggle = onToggle;
+    }
+
+    private void toggle() {
+        dark = !dark;
+        if (onToggle != null) {
+            onToggle.run();
+        }
+        repaint();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
-        boolean dark = isSelected();
-
         Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         int w = getWidth();
         int h = getHeight();
         int arc = h;
 
-        // фон трека
-        Color trackLight = new Color(240, 244, 255, 200);
-        Color trackDark  = new Color(30, 36, 60, 220);
-        g2.setColor(dark ? trackDark : trackLight);
-        g2.fillRoundRect(0, 0, w - 1, h - 1, arc, arc);
+        // track
+        g2.setColor(AppTheme.getToggleTrack());
+        g2.fillRoundRect(0, 0, w, h, arc, arc);
 
-        // граница
-        g2.setColor(AppTheme.glassBorder());
-        g2.drawRoundRect(0, 0, w - 1, h - 1, arc, arc);
+        int padding = 3;
+        int thumbSize = h - padding * 2;
 
-        // положение бегунка: слева (light / sun) или справа (dark / moon)
-        int thumbSize = h - 6;
-        int x = dark ? (w - thumbSize - 3) : 3;
-        int y = 3;
+        // DARK → thumb on the right, LIGHT → thumb on the left
+        int xThumb = dark ? (w - padding - thumbSize) : padding;
 
-        // бегунок
-        g2.setColor(Color.WHITE);
-        g2.fillOval(x, y, thumbSize, thumbSize);
-        g2.setColor(new Color(0, 0, 0, 40));
-        g2.drawOval(x, y, thumbSize, thumbSize);
+        // thumb
+        g2.setColor(AppTheme.getToggleThumb());
+        g2.fillOval(xThumb, padding, thumbSize, thumbSize);
 
-        // иконка солнце / луна
-        g2.setClip(x, y, thumbSize, thumbSize);
-        g2.translate(x, y);
+        // icon (sun for light, moon for dark)
+        int iconSize = thumbSize - 8;
+        int iconX = xThumb + (thumbSize - iconSize) / 2;
+        int iconY = padding + (thumbSize - iconSize) / 2;
 
         if (!dark) {
-            // солнце
-            g2.setColor(new Color(255, 180, 0));
-            int r = thumbSize / 2 - 4;
-            int cx = thumbSize / 2;
-            int cy = thumbSize / 2;
-            g2.fillOval(cx - r, cy - r, 2 * r, 2 * r);
-
-            g2.setStroke(new BasicStroke(1.2f));
-            for (int i = 0; i < 8; i++) {
-                double angle = i * Math.PI / 4;
-                int x1 = cx + (int) (Math.cos(angle) * (r + 2));
-                int y1 = cy + (int) (Math.sin(angle) * (r + 2));
-                int x2 = cx + (int) (Math.cos(angle) * (r + 6));
-                int y2 = cy + (int) (Math.sin(angle) * (r + 6));
-                g2.drawLine(x1, y1, x2, y2);
-            }
+            // LIGHT: draw sun
+            g2.setColor(new Color(255, 204, 0));
+            g2.fillOval(iconX, iconY, iconSize, iconSize);
         } else {
-            // луна
-            int r = thumbSize / 2 - 2;
-            int cx = thumbSize / 2;
-            int cy = thumbSize / 2;
-            g2.setColor(new Color(245, 245, 255));
-            g2.fillOval(cx - r, cy - r, 2 * r, 2 * r);
-
-            g2.setColor(new Color(200, 205, 230));
-            g2.fillOval(cx - r / 2, cy - r, 2 * r, 2 * r);
+            // DARK: draw moon
+            g2.setColor(new Color(185, 195, 255));
+            g2.fillOval(iconX, iconY, iconSize, iconSize);
+            g2.setColor(AppTheme.getToggleThumb());
+            g2.fillOval(iconX + iconSize / 3, iconY, iconSize, iconSize);
         }
 
         g2.dispose();

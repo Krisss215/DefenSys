@@ -1,125 +1,66 @@
 // GlassCard.java
 package com.guardian.ui;
-
 import javax.swing.*;
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
-public class GlassCard extends GlassPanel implements PropertyChangeListener {
+public class GlassCard extends JPanel {
 
-    private final JLabel titleLabel = new JLabel();
-    private final JLabel valueLabel = new JLabel();
-    private final JLabel subtitleLabel = new JLabel();
-    private Color accentColor = AppTheme.accent();
+    private final boolean showAccent;
 
-    private boolean alertMode = false;
-    private float pulsePhase = 0f;
-    private final Timer pulseTimer;
-
-    public GlassCard(String title, String value, Color accent) {
-        this(title, value, "", accent);
-    }
-
-    public GlassCard(String title, String value, String subtitle, Color accent) {
-        this.accentColor = accent;
-        setLayout(new BorderLayout(8, 8));
-
-        titleLabel.setText(title);
-        titleLabel.setFont(AppTheme.bodyFont(12f));   // было 13f
-        titleLabel.setForeground(AppTheme.textSecondary());
-
-        valueLabel.setText(value);
-        valueLabel.setFont(AppTheme.titleFont(18f));  // было 22f
-        valueLabel.setForeground(AppTheme.textPrimary());
-
-        subtitleLabel.setText(subtitle);
-        subtitleLabel.setFont(AppTheme.bodyFont(10f)); // было 11f
-        subtitleLabel.setForeground(AppTheme.textSecondary());
-
-        JPanel top = new JPanel(new BorderLayout());
-        top.setOpaque(false);
-        top.add(titleLabel, BorderLayout.WEST);
-
-        add(top, BorderLayout.NORTH);
-        add(valueLabel, BorderLayout.CENTER);
-        add(subtitleLabel, BorderLayout.SOUTH);
-
-        pulseTimer = new Timer(16, e -> {
-            pulsePhase += 0.02f;
-            if (pulsePhase > 1f) pulsePhase -= 1f;
-            repaint();
-        });
-
-        AppTheme.addThemeListener(this);
-    }
-
-    public void setAccentColor(Color c) {
-        this.accentColor = c;
-        repaint();
-    }
-
-    public void setValue(String value) {
-        valueLabel.setText(value);
-    }
-
-    public void setSubtitle(String subtitle) {
-        subtitleLabel.setText(subtitle);
-    }
-
-    public void setAlertMode(boolean alert) {
-        if (this.alertMode == alert) return;
-        this.alertMode = alert;
-        if (alertMode) {
-            pulsePhase = 0f;
-            pulseTimer.start();
-        } else {
-            pulseTimer.stop();
-            repaint();
-        }
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if ("mode".equals(evt.getPropertyName())) {
-            titleLabel.setForeground(AppTheme.textSecondary());
-            valueLabel.setForeground(AppTheme.textPrimary());
-            subtitleLabel.setForeground(AppTheme.textSecondary());
-            repaint();
-        }
+    public GlassCard(boolean showAccent) {
+        this.showAccent = showAccent;
+        setOpaque(false);
+        setLayout(new BorderLayout(16, 0));
+        setBorder(BorderFactory.createEmptyBorder(14, 16, 14, 16));
     }
 
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
         Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+        int arc = 26;
+        int w = getWidth();
         int h = getHeight();
 
-        Color base = new Color(
-                accentColor.getRed(),
-                accentColor.getGreen(),
-                accentColor.getBlue(),
-                200
-        );
+        // Стеклянный фон
+        g2.setColor(AppTheme.getGlassBackground());
+        g2.fillRoundRect(0, 0, w, h, arc, arc);
 
-        if (alertMode) {
-            float s = (float) ((Math.sin(pulsePhase * Math.PI * 2) + 1) / 2.0);
-            int alpha = 120 + (int) (80 * s);
-            base = new Color(
-                    accentColor.getRed(),
-                    accentColor.getGreen(),
-                    accentColor.getBlue(),
-                    alpha
-            );
-        }
-
-        g2.setColor(base);
-        g2.fillRoundRect(6, 10, 4, h - 26, 8, 8);
+        // Обводка
+        g2.setColor(AppTheme.getGlassBorder());
+        g2.setStroke(new BasicStroke(1.2f));
+        g2.drawRoundRect(0, 0, w - 1, h - 1, arc, arc);
 
         g2.dispose();
+        super.paintComponent(g);
+    }
+
+    public Component createAccentColumn() {
+        if (!showAccent) return Box.createHorizontalStrut(0);
+
+        JPanel accent = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int w = getWidth();
+                int h = getHeight();
+                GradientPaint gp = new GradientPaint(
+                        0, 0, AppTheme.getAccentStart(),
+                        0, h, AppTheme.getAccentEnd()
+                );
+                g2.setPaint(gp);
+                // Полностью скруглённый столбик — НИЧЕГО не обрезается
+                g2.fillRoundRect(0, 0, w, h, w, w);
+
+                g2.dispose();
+            }
+        };
+        accent.setOpaque(false);
+        accent.setPreferredSize(new Dimension(20, 10));
+
+        return accent;
     }
 }
