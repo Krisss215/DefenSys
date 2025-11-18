@@ -1,0 +1,14 @@
+package com.guardian.modules;
+
+public enum SecurityEventType {
+    USB_CONNECTED,
+    USB_DISCONNECTED,
+    NETWORK_NEW_CONNECTION,
+    NETWORK_INTERFACE_UP,
+    NETWORK_INTERFACE_DOWN,
+    FILE_CREATED,
+    FILE_SCANNED_SUSPICIOUS,
+    FILE_SCANNED_CLEAN,
+    INTERNAL_ERROR
+}
+
