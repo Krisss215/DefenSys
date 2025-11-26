@@ -52,6 +52,6 @@ public final class ExtendedMonitoringBootstrap {
         // планировщик отчётов раз в 2 недели
         reportScheduler.start();
 
-        SecurityEventLogger.log("AGENT", "ExtendedMonitoringBootstrap успешно запущен.");
+        SecurityEventLogger.log("AGENT", "ExtendedMonitoringBootstrap started successfully.");
     }
 }
