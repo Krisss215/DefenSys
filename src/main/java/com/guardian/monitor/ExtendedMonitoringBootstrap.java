@@ -39,12 +39,12 @@ public final class ExtendedMonitoringBootstrap {
             if (enabled) {
                 SecurityEventLogger.log(
                         "BITLOCKER",
-                        "BitLocker включён на всех системных томах."
+                        "BitLocker enabled on all systems tones."
                 );
             } else {
                 SecurityEventLogger.log(
                         "BITLOCKER",
-                        "BitLocker НЕ включён хотя бы на одном системном томе."
+                        "BitLocker disabled on all systems tones."
                 );
             }
         });
