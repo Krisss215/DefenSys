@@ -1,83 +1,42 @@
 package com.guardian.modules;
 
-import com.guardian.monitor.*;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import com.guardian.monitor.ExtendedMonitoringBootstrap;
 
 /**
- * Центральный backend-класс, который поднимает все мониторы.
- * UI может просто дергать startAgent()/stopAgent(), не меняя дизайн.
+ * Упрощённый менеджер мониторинга.
+ * Больше НЕ использует старые классы вроде WatchServiceFileActivityMonitor.
+ * Вся работа делегируется в ExtendedMonitoringBootstrap.
  */
 public class MonitoringManager {
 
-    private final AgentStatusListener statusListener;
+    private static final MonitoringManager INSTANCE = new MonitoringManager();
 
-    private final LocalServiceClient baseClient;
-    private final UiAwareLocalServiceClient uiClient;
-    private final FileScanner fileScanner;
+    private volatile boolean started = false;
 
-    private final UsbMonitor usbMonitor;
-    private final NetworkMonitor networkMonitor;
-    private final FileActivityMonitor fileActivityMonitor;
-
-    private boolean started = false;
-
-    public MonitoringManager(AgentStatusListener statusListener) {
-        this.statusListener = statusListener;
-
-        LocalServiceConfig config = LocalServiceConfig.loadDefault();
-        this.baseClient = LocalServiceClientFactory.create(config);
-        this.uiClient = new UiAwareLocalServiceClient(baseClient, statusListener);
-        this.fileScanner = new SimpleFileScanner(uiClient);
-
-        this.usbMonitor = new PollingUsbMonitor(uiClient, fileScanner, 5_000L);
-        this.networkMonitor = new PollingNetworkMonitor(uiClient, 5_000L);
-
-        List<Path> dirs = buildDefaultWatchDirs();
-        this.fileActivityMonitor = new WatchServiceFileActivityMonitor(dirs, fileScanner, uiClient);
+    private MonitoringManager() {
     }
 
-    private List<Path> buildDefaultWatchDirs() {
-        List<Path> dirs = new ArrayList<>();
-        String home = System.getProperty("user.home", ".");
-        dirs.add(Paths.get(home, "Downloads"));
-        dirs.add(Paths.get(home, "Desktop"));
-        dirs.add(Paths.get(home, "Documents"));
-        return dirs;
+    public static MonitoringManager getInstance() {
+        return INSTANCE;
     }
 
-    public synchronized void startAgent() {
+    /**
+     * Запуск всех фоновых сервисов мониторинга.
+     * Можно вызывать несколько раз – повторный запуск не произойдёт.
+     */
+    public synchronized void start() {
         if (started) {
             return;
         }
+        ExtendedMonitoringBootstrap.start();
         started = true;
-        usbMonitor.start();
-        networkMonitor.start();
-        fileActivityMonitor.start();
-        if (statusListener != null) {
-            statusListener.onAgentStarted();
-            statusListener.onUsbStatsChanged(0, 0);
-            statusListener.onNetworkStatsChanged(0);
-        }
     }
 
-    public synchronized void stopAgent() {
-        if (!started) {
-            return;
-        }
-        started = false;
-        usbMonitor.stop();
-        networkMonitor.stop();
-        fileActivityMonitor.stop();
-        if (statusListener != null) {
-            statusListener.onAgentStopped();
-        }
-    }
-
-    public LocalServiceClient getLocalServiceClient() {
-        return uiClient;
+    /**
+     * Остановка – сейчас ничего не делает, т.к. сервисы живут до завершения процесса.
+     * Метод оставлен только для совместимости с остальным кодом.
+     */
+    public synchronized void stop() {
+        // no-op
     }
 }

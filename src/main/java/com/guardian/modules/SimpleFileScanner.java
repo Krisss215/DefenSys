@@ -5,10 +5,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
-/**
- * Простой офлайн-сканер.
- * Ищет подозрительные расширения и отправляет события.
- */
+
 public class SimpleFileScanner implements FileScanner {
 
     private final LocalServiceClient client;

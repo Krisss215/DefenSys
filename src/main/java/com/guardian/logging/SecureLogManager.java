@@ -1,147 +1,54 @@
+// src/main/java/com/guardian/logging/SecureLogManager.java
 package com.guardian.logging;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public class SecureLogManager {
 
-    private final Path logFile;
-    private long lastIndex;
-    private String lastHash;
+    private static final int MAX_ENTRIES = 1000;
 
-    public SecureLogManager(Path logFile) throws IOException {
-        this.logFile = logFile;
-        if (logFile.getParent() != null) {
-            Files.createDirectories(logFile.getParent());
-        }
-        initState();
+    private static final SecureLogManager INSTANCE = new SecureLogManager();
+
+    private final LinkedList<SecureLogEntry> entries = new LinkedList<>();
+
+    private SecureLogManager() {
     }
 
-    private void initState() throws IOException {
-        if (!Files.exists(logFile)) {
-            this.lastIndex = 0L;
-            this.lastHash = SecureLogEntry.GENESIS_HASH;
-            return;
-        }
-
-        try (BufferedReader reader = Files.newBufferedReader(logFile, StandardCharsets.UTF_8)) {
-            String line;
-            String lastNonEmpty = null;
-            while ((line = reader.readLine()) != null) {
-                if (!line.trim().isEmpty()) {
-                    lastNonEmpty = line;
-                }
-            }
-            if (lastNonEmpty == null) {
-                this.lastIndex = 0L;
-                this.lastHash = SecureLogEntry.GENESIS_HASH;
-            } else {
-                SecureLogEntry lastEntry = SecureLogEntry.fromLine(lastNonEmpty);
-                this.lastIndex = lastEntry.getIndex();
-                this.lastHash = lastEntry.getHash();
-            }
-        }
+    public static SecureLogManager getInstance() {
+        return INSTANCE;
     }
 
+    /**
+     * Лог события в UI-историю и в файл (SecurityEventLogger).
+     *
+     * @param eventType тип события (USB / NET / UI / и т.п.)
+     * @param source    источник (например "Agent", "UI")
+     * @param message   текст сообщения
+     * @return созданная запись
+     */
     public synchronized SecureLogEntry logEvent(String eventType,
-                                                String severity,
-                                                String message) throws IOException {
-        long newIndex = lastIndex + 1;
-        long ts = System.currentTimeMillis();
+                                                String source,
+                                                String message) {
+        SecureLogEntry entry = new SecureLogEntry(eventType, source, message);
 
-        SecureLogEntry entry = SecureLogEntry.create(
-                newIndex,
-                ts,
-                eventType,
-                severity,
-                message,
-                lastHash
-        );
+        // кладём в список для отображения в UI
+        entries.addFirst(entry);
+        while (entries.size() > MAX_ENTRIES) {
+            entries.removeLast();
+        }
 
-        String line = entry.toLine() + System.lineSeparator();
-        Files.writeString(
-                logFile,
-                line,
-                StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.APPEND
-        );
-
-        this.lastIndex = newIndex;
-        this.lastHash = entry.getHash();
+        // дублируем в файловый лог для отчётов / анализа
+        SecurityEventLogger.log(eventType, "[" + source + "] " + message);
 
         return entry;
     }
 
-    public Path getLogFile() {
-        return logFile;
-    }
-
-    public static VerificationResult verifyLogFile(Path logFile) throws IOException {
-        if (!Files.exists(logFile)) {
-            return new VerificationResult(false, 0, null, "File does not exist");
-        }
-
-        long total = 0L;
-        long expectedIndex = 0L;
-        String expectedPrevHash = SecureLogEntry.GENESIS_HASH;
-
-        try (BufferedReader reader = Files.newBufferedReader(logFile, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) {
-                    continue;
-                }
-                total++;
-
-                SecureLogEntry entry = SecureLogEntry.fromLine(line);
-
-                long index = entry.getIndex();
-                if (index != expectedIndex + 1) {
-                    return new VerificationResult(
-                            false,
-                            total,
-                            index,
-                            "Index sequence broken: expected " + (expectedIndex + 1) + " but got " + index
-                    );
-                }
-
-                if (!expectedPrevHash.equals(entry.getPrevHash())) {
-                    return new VerificationResult(
-                            false,
-                            total,
-                            index,
-                            "prevHash mismatch at index " + index
-                    );
-                }
-
-                String recomputedHash = SecureLogEntry.recomputeHash(
-                        entry.getIndex(),
-                        entry.getTimestampMillis(),
-                        entry.getEventType(),
-                        entry.getSeverity(),
-                        entry.getMessage(),
-                        entry.getPrevHash()
-                );
-
-                if (!recomputedHash.equals(entry.getHash())) {
-                    return new VerificationResult(
-                            false,
-                            total,
-                            index,
-                            "Hash mismatch at index " + index
-                    );
-                }
-
-                expectedIndex = index;
-                expectedPrevHash = entry.getHash();
-            }
-        }
-
-        return new VerificationResult(true, total, null, "OK");
+    /**
+     * Возвращает список записей для истории событий в UI.
+     */
+    public synchronized List<SecureLogEntry> getEntries() {
+        return Collections.unmodifiableList(new LinkedList<>(entries));
     }
 }
