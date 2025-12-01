@@ -1,4 +1,4 @@
-// build.gradle.kts – full working version with PDF reports, without icon
+// build.gradle.kts – DefenSys build script (PDF reports, JDK 21, ShadowJar + Launch4j)
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
@@ -9,7 +9,7 @@ plugins {
     id("edu.sc.seis.launch4j") version "3.0.5"
 }
 
-group = "com.elderguardian"
+group = "com.elderguardian"      // можно оставить старую группу, это не видно пользователю
 version = "1.0.0"
 
 repositories {
@@ -27,14 +27,15 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
+// используем локально установленную JDK 21
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 application {
-    // your real main class (from screenshot)
+    // главный класс UI
     mainClass.set("com.guardian.ui.AgentMain")
 }
 
@@ -42,25 +43,25 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// build fat-jar with Shadow
+// ShadowJar: собираем fat-jar с именем DefenSys.jar
 tasks.withType<ShadowJar> {
-    archiveBaseName.set("ElderGuardianAgent")
-    archiveClassifier.set("")
-    archiveVersion.set("")
+    archiveBaseName.set("DefenSys")  // <-- имя jar-файла
+    archiveClassifier.set("")        // без "-all"
+    archiveVersion.set("")           // без версии
     mergeServiceFiles()
 }
 
-// Launch4j: build .exe from fat-jar
+// Launch4j: собираем DefenSys.exe из fat-jar
 launch4j {
-    // main class
+    // главный класс
     mainClassName = "com.guardian.ui.AgentMain"
 
-    // exe file name
-    outfile = "ElderGuardianAgent.exe"
+    // имя exe-файла
+    outfile = "DefenSys.exe"        // <-- имя .exe
 
-    // IMPORTANT: in Kotlin DSL use setJarTask(...)
+    // для Kotlin DSL:
     setJarTask(tasks.named<ShadowJar>("shadowJar").get())
 
-    // no icon → no error
-    jreMinVersion = "17"
+    // целимся в JRE 21
+    jreMinVersion = "21"
 }

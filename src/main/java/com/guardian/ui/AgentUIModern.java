@@ -14,7 +14,7 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
 /**
- * Modern main UI for USB Ninja agent.
+ * Modern main UI for DefenSys agent.
  * Backend is provided via AgentController interface.
  */
 public class AgentUIModern extends JFrame {
@@ -98,7 +98,7 @@ public class AgentUIModern extends JFrame {
 
     // main constructor with explicit controller
     public AgentUIModern(AgentController agentController) {
-        super("USB Ninja – Windows Security Agent");
+        super("DefenSys – Windows Security Agent");
         this.agentController = agentController;
 
         initLookAndFeel();
@@ -153,7 +153,7 @@ public class AgentUIModern extends JFrame {
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
         header.setBorder(new EmptyBorder(0, 0, 8, 0));
 
-        JLabel title = new JLabel("USB Ninja – Windows Security Agent");
+        JLabel title = new JLabel("DefenSys – Windows Security Agent");
         title.setFont(title.getFont().deriveFont(Font.BOLD, 20f));
 
         JLabel subtitle = new JLabel("Real-time monitoring: USB, Network & suspicious activity");
@@ -463,7 +463,7 @@ public class AgentUIModern extends JFrame {
     // ---------------------------------------------------------------------
     private void printTextAsPages(String text) throws PrinterException {
         PrinterJob job = PrinterJob.getPrinterJob();
-        job.setJobName("USB Ninja Report");
+        job.setJobName("DefenSys Report");
 
         final String[] lines = text.split("\n");
 

@@ -24,11 +24,12 @@ public class ControlPanel extends GlassPanel {
         GlassCard card = new GlassCard(false);
         add(card, BorderLayout.CENTER);
 
+        // LEFT SIDE (title + subtitle)
         JPanel left = new JPanel();
         left.setOpaque(false);
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
 
-        titleLabel = new JLabel("USB Ninja – Windows Security Agent");
+        titleLabel = new JLabel("DefenSys – Windows Security Agent");
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 22f));
         titleLabel.setForeground(AppTheme.getTitleColor());
 
@@ -40,6 +41,7 @@ public class ControlPanel extends GlassPanel {
         left.add(Box.createVerticalStrut(6));
         left.add(subtitleLabel);
 
+        // RIGHT SIDE (buttons + theme switch)
         JPanel right = new JPanel();
         right.setOpaque(false);
         right.setLayout(new BoxLayout(right, BoxLayout.X_AXIS));
@@ -54,6 +56,7 @@ public class ControlPanel extends GlassPanel {
             stopButton.setEnabled(true);
             if (listener != null) listener.onStart();
         });
+
         stopButton.addActionListener(e -> {
             startButton.setEnabled(true);
             stopButton.setEnabled(false);
@@ -89,4 +92,3 @@ public class ControlPanel extends GlassPanel {
         themeLabel.setForeground(AppTheme.getSubtitleColor());
     }
 }
-
