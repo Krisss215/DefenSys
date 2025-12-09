@@ -91,7 +91,7 @@ public class AgentUIModern extends JFrame {
 
     private boolean darkMode = false;
 
-    // no-args constructor, совместимый с существующим AgentMain
+    // no-args constructor
     public AgentUIModern() {
         this(new DefaultAgentController());
     }

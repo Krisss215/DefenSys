@@ -23,7 +23,7 @@ public class AgentMain {
 
     // small helper so we can use the same timestamp format as inside AgentUIModern
     private static String uiTimestamp(AgentUIModern ui) {
-        // используем его приватный метод через текст: тут просто копия логики
+
         return java.time.LocalDateTime.now()
                 .toString()
                 .replace('T', ' ')
